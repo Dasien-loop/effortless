@@ -34,3 +34,6 @@ public enum DirectionTraceShape {
         this.direction = direction;
     }
 }
+
+
+

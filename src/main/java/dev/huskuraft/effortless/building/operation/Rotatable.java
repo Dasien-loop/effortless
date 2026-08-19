@@ -7,3 +7,6 @@ public interface Rotatable<O> extends Trait {
     O rotate(RotateContext rotateContext);
 
 }
+
+
+

@@ -13,3 +13,6 @@ public interface Movable<O> extends Trait {
 //    O absolute(Vec3 vec3i);
 
 }
+
+
+

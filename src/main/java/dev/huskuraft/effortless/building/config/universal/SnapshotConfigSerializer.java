@@ -2,8 +2,8 @@ package dev.huskuraft.effortless.building.config.universal;
 
 import dev.huskuraft.effortless.building.clipboard.Snapshot;
 import dev.huskuraft.universal.api.config.ConfigSerializer;
-import dev.huskuraft.universal.api.nightconfig.core.Config;
-import dev.huskuraft.universal.api.nightconfig.core.ConfigSpec;
+import com.electronwill.nightconfig.core.Config;
+import com.electronwill.nightconfig.core.ConfigSpec;
 
 public class SnapshotConfigSerializer implements ConfigSerializer<Snapshot> {
 
@@ -33,3 +33,6 @@ public class SnapshotConfigSerializer implements ConfigSerializer<Snapshot> {
         return Config.inMemory();
     }
 }
+
+
+

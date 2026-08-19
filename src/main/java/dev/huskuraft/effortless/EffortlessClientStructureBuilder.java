@@ -39,7 +39,9 @@ import dev.huskuraft.effortless.building.BuildResult;
 import dev.huskuraft.effortless.building.BuildStage;
 import dev.huskuraft.effortless.building.BuildState;
 import dev.huskuraft.effortless.building.BuildType;
+import dev.huskuraft.effortless.building.ClientMaterialSnapshotCache;
 import dev.huskuraft.effortless.building.Context;
+import dev.huskuraft.effortless.building.InventorySnapshot;
 import dev.huskuraft.effortless.building.SingleCommand;
 import dev.huskuraft.effortless.building.StructureBuilder;
 import dev.huskuraft.effortless.building.clipboard.Clipboard;
@@ -60,6 +62,7 @@ import dev.huskuraft.effortless.building.structure.BuildMode;
 import dev.huskuraft.effortless.building.structure.builder.Structure;
 import dev.huskuraft.effortless.networking.packets.player.PlayerBuildPacket;
 import dev.huskuraft.effortless.networking.packets.player.PlayerCommandPacket;
+import dev.huskuraft.effortless.networking.packets.player.PlayerMaterialSnapshotPacket;
 import dev.huskuraft.effortless.renderer.opertaion.children.BlockOperationRenderer;
 import dev.huskuraft.effortless.renderer.outliner.OutlineRenderLayers;
 import dev.huskuraft.effortless.screen.wheel.AbstractWheelScreen;
@@ -68,12 +71,37 @@ import dev.huskuraft.effortless.session.config.SessionConfig;
 
 public final class EffortlessClientStructureBuilder extends StructureBuilder {
 
+    private static final int PREVIEW_SERVER_REFRESH_TICKS = 10;
+
     private final EffortlessClient entrance;
 
     private final Map<UUID, Context> contexts = new HashMap<>();
     private final Map<UUID, Context> historyContexts = new HashMap<>();
     private final Map<UUID, OperationResultStack> undoRedoStacks = new HashMap<>();
     private final AtomicReference<ResourceLocation> lastClientPlayerLevel = new AtomicReference<>();
+    private OperationTooltip serverPreviewTooltip;
+    private UUID serverPreviewContextId;
+    private Boolean serverPreviewHasAllRequiredItems;
+    private PreviewKey lastPreviewKey;
+    private Context lastPreviewContext;
+    private BatchOperationResult lastPreviewResult;
+    private int previewServerRefreshTicks;
+
+    private record PreviewKey(
+            UUID id,
+            BuildState buildState,
+            Context.Interactions interactions,
+            Structure structure,
+            Clipboard clipboard,
+            Pattern pattern,
+            Replace replace,
+            Context.Configs configs,
+            ResourceLocation dimensionId,
+            dev.huskuraft.effortless.building.operation.block.Extras operationExtras,
+            Object gameMode,
+            int inventorySignature
+    ) {
+    }
 
     public EffortlessClientStructureBuilder(EffortlessClient entrance) {
         this.entrance = entrance;
@@ -333,6 +361,14 @@ public final class EffortlessClientStructureBuilder extends StructureBuilder {
     @Override
     public void resetAll() {
         lastClientPlayerLevel.set(null);
+        ClientMaterialSnapshotCache.clear(getEntrance().getClient() == null ? null : getEntrance().getClient().getPlayer());
+        serverPreviewTooltip = null;
+        serverPreviewContextId = null;
+        serverPreviewHasAllRequiredItems = null;
+        lastPreviewKey = null;
+        lastPreviewContext = null;
+        lastPreviewResult = null;
+        previewServerRefreshTicks = 0;
         contexts.clear();
         undoRedoStacks.clear();
         getEntrance().getConfigStorage().update(config -> new ClientConfig(config.renderConfig(), config.patternConfig(), config.clipboardConfig()));
@@ -480,6 +516,21 @@ public final class EffortlessClientStructureBuilder extends StructureBuilder {
 
     public void onTooltipReceived(Player player, OperationTooltip operationTooltip) {
         switch (operationTooltip.type()) {
+            case PREVIEW -> {
+                serverPreviewTooltip = operationTooltip;
+                serverPreviewContextId = operationTooltip.context().id();
+                var serverHasAllRequiredItems = operationTooltip.itemSummary()
+                        .getOrDefault(ItemSummary.BLOCKS_ITEMS_INSUFFICIENT, List.of()).isEmpty();
+                BlockOperationRenderer.setServerPreviewHasAllRequiredItems(serverHasAllRequiredItems);
+                var availabilityChanged = !Objects.equals(this.serverPreviewHasAllRequiredItems, serverHasAllRequiredItems);
+                serverPreviewHasAllRequiredItems = serverHasAllRequiredItems;
+                if (availabilityChanged && lastPreviewContext != null
+                        && lastPreviewContext.id().equals(serverPreviewContextId)
+                        && lastPreviewResult != null) {
+                    showContext(player.getId(), 0, player, lastPreviewContext, lastPreviewResult);
+                }
+                showTooltip(player.getId(), 0, player, operationTooltip);
+            }
             case BUILD -> {
                 showTooltip(operationTooltip.context().id(), 1024, player, operationTooltip);
             }
@@ -573,14 +624,41 @@ public final class EffortlessClientStructureBuilder extends StructureBuilder {
 
         var context1 = getContextTraced(player);
         var context = context1.withBuildType(BuildType.PREVIEW);
+        ClientMaterialSnapshotCache.activate(player, context.id());
+        var previewKey = previewKey(context);
+        var previewChanged = !previewKey.equals(lastPreviewKey);
 
         if (context.getVolume() > getEntrance().getConfigStorage().get().renderConfig().maxRenderVolume()) {
-            showContext(player.getId(), 0, player, context, null);
+            if (previewChanged) {
+                lastPreviewKey = previewKey;
+                lastPreviewContext = context;
+                lastPreviewResult = null;
+                clearServerPreviewForDifferentContext(context);
+                showContext(player.getId(), 0, player, context, null);
+            } else {
+                keepPreviewContext(player.getId(), context);
+            }
             showTooltip(player.getId(), 0, player, OperationTooltip.build(context));
         } else {
-            var result = new BatchBuildSession(getEntrance(), player, context.withBuildType(BuildType.PREVIEW)).commit();
-            showContext(player.getId(), 0, player, context, result);
-            showTooltip(player.getId(), 0, player, result.getTooltip());
+            if (previewChanged) {
+                var result = new BatchBuildSession(getEntrance(), player, context).commit();
+                lastPreviewKey = previewKey;
+                lastPreviewContext = context;
+                lastPreviewResult = result;
+                clearServerPreviewForDifferentContext(context);
+                showContext(player.getId(), 0, player, context, result);
+            } else {
+                keepPreviewContext(player.getId(), context);
+            }
+
+            var hasServerPreview = serverPreviewTooltip != null && context.id().equals(serverPreviewContextId);
+            var serverHasAllRequiredItems = hasServerPreview
+                    && serverPreviewTooltip.itemSummary().getOrDefault(ItemSummary.BLOCKS_ITEMS_INSUFFICIENT, List.of()).isEmpty();
+            BlockOperationRenderer.setServerPreviewHasAllRequiredItems(serverHasAllRequiredItems);
+            var tooltip = hasServerPreview
+                    ? serverPreviewTooltip
+                    : lastPreviewResult.getTooltip();
+            showTooltip(player.getId(), 0, player, tooltip);
         }
 
         showBuildMessage(player, context);
@@ -598,7 +676,75 @@ public final class EffortlessClientStructureBuilder extends StructureBuilder {
             getEntrance().getClient().getSoundManager().play(sound);
         }
 
-        getEntrance().getChannel().sendPacket(new PlayerBuildPacket(getPlayer().getId(), context));
+        if (previewChanged || ++previewServerRefreshTicks >= PREVIEW_SERVER_REFRESH_TICKS) {
+            previewServerRefreshTicks = 0;
+            getEntrance().getChannel().sendPacket(new PlayerBuildPacket(getPlayer().getId(), context));
+        }
+    }
+
+    public void onMaterialSnapshotReceived(Player player, PlayerMaterialSnapshotPacket packet) {
+        if (player == null || !player.getId().equals(packet.playerId())) {
+            return;
+        }
+        ClientMaterialSnapshotCache.update(player, packet.contextId(), packet.items());
+        if (lastPreviewContext == null || !packet.contextId().equals(lastPreviewContext.id())) {
+            return;
+        }
+        var context = lastPreviewContext;
+        var result = new BatchBuildSession(getEntrance(), player, context).commit();
+        lastPreviewResult = result;
+        showContext(player.getId(), 0, player, context, result);
+    }
+
+    private PreviewKey previewKey(Context context) {
+        var extras = context.extras();
+        return new PreviewKey(
+                context.id(),
+                context.buildState(),
+                context.interactions(),
+                context.structure(),
+                context.clipboard(),
+                context.pattern(),
+                context.replace(),
+                context.configs(),
+                extras == null ? null : extras.dimensionId(),
+                extras == null ? null : extras.extras(),
+                extras == null ? null : extras.gameMode(),
+                inventorySignature(extras == null ? null : extras.inventorySnapshot())
+        );
+    }
+
+    private void clearServerPreviewForDifferentContext(Context context) {
+        if (serverPreviewContextId != null && !context.id().equals(serverPreviewContextId)) {
+            serverPreviewTooltip = null;
+            serverPreviewContextId = null;
+            serverPreviewHasAllRequiredItems = null;
+        }
+    }
+
+    private int inventorySignature(InventorySnapshot inventory) {
+        if (inventory == null) {
+            return 0;
+        }
+        var signature = 1;
+        signature = 31 * signature + inventory.getSelected();
+        for (var stack : inventory.getItems()) {
+            signature = 31 * signature + stack.getItem().getId().hashCode();
+            signature = 31 * signature + stack.getCount();
+            signature = 31 * signature + stack.getDamageValue();
+        }
+        return signature;
+    }
+
+    private void keepPreviewContext(UUID uuid, Context context) {
+        getEntrance().getClientManager().getPatternRenderer().keep(uuid);
+        if (!context.interactions().isEmpty()) {
+            getEntrance().getClientManager().getOutlineRenderer().keep(generateId(uuid, BoundingBox3d.class));
+        }
+        getEntrance().getClientManager().getOperationsRenderer().keep(uuid);
+        for (var color : BlockOperationRenderer.getAllColors()) {
+            getEntrance().getClientManager().getOutlineRenderer().keep(generateId(uuid, color));
+        }
     }
 
     private void reloadContext(Player player) {

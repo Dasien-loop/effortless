@@ -9,3 +9,6 @@ public interface BlockShaders {
     Shader TINTED_OUTLINE = Shader.lazy(ResourceLocation.vanilla("rendertype_tinted_solid"), VertexFormats.BLOCK);
 
 }
+
+
+

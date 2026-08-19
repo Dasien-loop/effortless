@@ -9,3 +9,6 @@ public interface Operation extends Mirrorable<Operation>, Movable<Operation>, Ro
     OperationResult commit();
 
 }
+
+
+

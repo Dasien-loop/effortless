@@ -41,7 +41,13 @@ public final class EffortlessSessionManager implements SessionManager {
 
     @Override
     public void onSessionConfig(SessionConfig sessionConfig, Player player) {
-        if (!player.isOperator() && !player.isSinglePlayerOwner()) {
+        Server server = getEntrance().getServerManager().getRunningServer();
+        if (server == null) {
+            Effortless.LOGGER.warn("Ignoring session config update because no server is running.");
+            return;
+        }
+
+        if (!server.isOperator(player.getProfile()) && !server.isSinglePlayerOwner(player.getProfile())) {
             player.sendMessage(Effortless.getSystemMessage(Text.text("You do not have permission to set server config.")));
             Effortless.LOGGER.warn("%s has no permission to set server config.".formatted(player.getProfile().getName()));
             return;
@@ -49,7 +55,6 @@ public final class EffortlessSessionManager implements SessionManager {
 
         getEntrance().getSessionConfigStorage().set(sessionConfig);
 
-        Server server = player.getServer();
         for (var serverPlayer : server.getPlayerList().getPlayers()) {
             updateSessionConfig(serverPlayer);
         }
@@ -122,3 +127,6 @@ public final class EffortlessSessionManager implements SessionManager {
     }
 
 }
+
+
+

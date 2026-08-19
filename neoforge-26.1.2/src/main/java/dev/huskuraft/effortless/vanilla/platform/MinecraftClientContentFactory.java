@@ -1,0 +1,60 @@
+package dev.huskuraft.effortless.vanilla.platform;
+
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.concurrent.ConcurrentHashMap;
+
+import com.google.auto.service.AutoService;
+
+import dev.huskuraft.universal.api.core.ItemStack;
+import dev.huskuraft.universal.api.input.KeyBinding;
+import dev.huskuraft.universal.api.platform.ClientContentFactory;
+import dev.huskuraft.universal.api.platform.SearchBy;
+import dev.huskuraft.universal.api.platform.SearchTree;
+import dev.huskuraft.universal.api.text.Text;
+import dev.huskuraft.effortless.vanilla.core.MinecraftItemStack;
+import dev.huskuraft.effortless.vanilla.input.MinecraftKeyBinding;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+//import net.minecraft.client.searchtree.PlainTextSearchTree;
+//import net.minecraft.client.searchtree.SearchRegistry;
+//import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.CreativeModeTabs;
+
+@AutoService(ClientContentFactory.class)
+public class MinecraftClientContentFactory extends MinecraftContentFactory implements ClientContentFactory {
+
+    private static final Map<net.minecraft.resources.Identifier, KeyMapping.Category> KEY_CATEGORIES =
+            new ConcurrentHashMap<>();
+
+    @Override
+    public SearchTree<ItemStack> searchItemStack(SearchBy searchBy) {
+        var minecraftPlayer = Minecraft.getInstance().player;
+        CreativeModeTabs.tryRebuildTabContents(minecraftPlayer.connection.enabledFeatures(), true, minecraftPlayer.level().registryAccess());
+
+        var minecraftSearchTrees = Minecraft.getInstance().getConnection().searchTrees();
+        var minecraftSearchTree = switch (searchBy) {
+            case NAME -> minecraftSearchTrees.creativeNameSearch();
+            case TAG -> minecraftSearchTrees.creativeTagSearch();
+        };
+
+        return query -> minecraftSearchTree.search(query).stream().map(itemStack -> new MinecraftItemStack(itemStack)).collect(Collectors.toList());
+    }
+
+    @Override
+    public <T> SearchTree<T> search(List<T> list, Function<T, Stream<Text>> keyExtractor) {
+        return null;
+    }
+
+    @Override
+    public KeyBinding newKeyBinding(String name, String category, int code) {
+        var categoryPath = category.substring(category.lastIndexOf('.') + 1);
+        var categoryId = net.minecraft.resources.Identifier.fromNamespaceAndPath("effortless", categoryPath);
+        var keyCategory = KEY_CATEGORIES.computeIfAbsent(categoryId, KeyMapping.Category::register);
+        return new MinecraftKeyBinding(new KeyMapping(name, code, keyCategory));
+    }
+
+}

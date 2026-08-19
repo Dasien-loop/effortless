@@ -112,3 +112,6 @@ public record DiagonalLine() implements BlockStructure {
         return BuildMode.DIAGONAL_LINE;
     }
 }
+
+
+

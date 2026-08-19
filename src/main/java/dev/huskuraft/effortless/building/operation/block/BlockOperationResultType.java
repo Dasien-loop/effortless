@@ -39,3 +39,6 @@ public enum BlockOperationResultType {
         return !success();
     }
 }
+
+
+

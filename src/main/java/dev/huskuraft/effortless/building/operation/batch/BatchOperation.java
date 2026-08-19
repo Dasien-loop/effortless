@@ -33,3 +33,6 @@ public abstract class BatchOperation implements Operation {
     public abstract Stream<? extends Operation> operations();
 
 }
+
+
+

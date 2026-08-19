@@ -110,3 +110,6 @@ public class EffortlessGeneralSettingsScreen extends AbstractPanelScreen {
         this.playerButton.setTooltip(playerTooltip);
     }
 }
+
+
+

@@ -4,22 +4,33 @@ pluginManagement {
         mavenLocal()
         mavenCentral()
         maven {
-            name = 'Huskuraft'
-            url = 'https://repo.huskuraft.dev/releases'
+            name = 'JitPack'
+            url = 'https://jitpack.io'
+        }
+        maven {
+            name = 'Forge'
+            url = 'https://maven.minecraftforge.net'
         }
     }
+}
+
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
 }
 
 dependencyResolutionManagement {
     repositories {
         mavenLocal()
         mavenCentral()
-        maven {
-            name = 'Huskuraft'
-            url = 'https://repo.huskuraft.dev/releases'
-        }
     }
 }
 
 rootProject.name = 'effortless'
+
+include ':local-api'
+include ':forge-1.20.1'
+project(':forge-1.20.1').projectDir = file('forge-1.20.1/forge/mc-1-20-1')
+
+include ':neoforge-1.21.1'
+include ':neoforge-26.1.2'
 

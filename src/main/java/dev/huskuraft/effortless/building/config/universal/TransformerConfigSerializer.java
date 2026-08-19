@@ -21,9 +21,9 @@ import dev.huskuraft.universal.api.core.Items;
 import dev.huskuraft.universal.api.core.ResourceLocation;
 import dev.huskuraft.universal.api.math.BoundingBox3d;
 import dev.huskuraft.universal.api.math.Vector3d;
-import dev.huskuraft.universal.api.nightconfig.core.Config;
-import dev.huskuraft.universal.api.nightconfig.core.ConfigSpec;
-import dev.huskuraft.universal.api.nightconfig.core.EnumGetMethod;
+import com.electronwill.nightconfig.core.Config;
+import com.electronwill.nightconfig.core.ConfigSpec;
+import com.electronwill.nightconfig.core.EnumGetMethod;
 import dev.huskuraft.universal.api.text.Text;
 
 public class TransformerConfigSerializer implements ConfigSerializer<Transformer> {
@@ -416,3 +416,6 @@ public class TransformerConfigSerializer implements ConfigSerializer<Transformer
     }
 
 }
+
+
+

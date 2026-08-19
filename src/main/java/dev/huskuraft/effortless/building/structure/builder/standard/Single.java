@@ -77,3 +77,6 @@ public record Single() implements BlockStructure {
         return BuildMode.SINGLE;
     }
 }
+
+
+

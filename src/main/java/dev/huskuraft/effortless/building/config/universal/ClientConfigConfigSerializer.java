@@ -5,12 +5,13 @@ import java.util.Objects;
 
 import dev.huskuraft.effortless.building.config.ClientConfig;
 import dev.huskuraft.effortless.building.config.ClipboardConfig;
+import dev.huskuraft.effortless.building.config.BuilderConfig;
 import dev.huskuraft.effortless.building.config.PatternConfig;
 import dev.huskuraft.effortless.building.config.RenderConfig;
 import dev.huskuraft.universal.api.config.ConfigSerializer;
-import dev.huskuraft.universal.api.nightconfig.core.CommentedConfig;
-import dev.huskuraft.universal.api.nightconfig.core.Config;
-import dev.huskuraft.universal.api.nightconfig.core.ConfigSpec;
+import com.electronwill.nightconfig.core.CommentedConfig;
+import com.electronwill.nightconfig.core.Config;
+import com.electronwill.nightconfig.core.ConfigSpec;
 
 public class ClientConfigConfigSerializer implements ConfigSerializer<ClientConfig> {
 
@@ -27,6 +28,7 @@ public class ClientConfigConfigSerializer implements ConfigSerializer<ClientConf
     private static final String KEY_COLLECTIONS = "collections";
 
     private static final String KEY_RESERVED_TOOL_DURABILITY = "reservedToolDurability";
+    private static final String KEY_PASSIVE_MODE = "passiveMode";
 
 
     @Override
@@ -40,7 +42,7 @@ public class ClientConfigConfigSerializer implements ConfigSerializer<ClientConf
 //        spec.defineInRange(List.of(KEY_RENDER, KEY_MAX_RENDER_DISTANCE), () -> getDefault().renderConfig().maxRenderDistance(), RenderConfig.MIN_MAX_RENDER_DISTANCE, RenderConfig.MAX_MAX_RENDER_DISTANCE);
         spec.defineList(List.of(KEY_PATTERN, KEY_TRANSFORMER_PRESETS), () -> getDefault().patternConfig().itemRandomizers().stream().map(TransformerConfigSerializer.INSTANCE::serialize).toList(), Config.class::isInstance);
         spec.defineList(List.of(KEY_CLIPBOARD, KEY_COLLECTIONS), () -> getDefault().clipboardConfig().collections().stream().map(SnapshotConfigSerializer.INSTANCE::serialize).toList(), Config.class::isInstance);
-//        spec.define(KEY_PASSIVE_MODE, () -> getDefault().passiveMode(), Boolean.class::isInstance);
+        spec.define(List.of(KEY_BUILDER, KEY_PASSIVE_MODE), () -> getDefault().builderConfig().passiveMode(), Boolean.class::isInstance);
         spec.defineInRange(List.of(KEY_BUILDER, KEY_RESERVED_TOOL_DURABILITY), getDefault().builderConfig().reservedToolDurability(), 0, 32);
 
         return spec;
@@ -50,6 +52,10 @@ public class ClientConfigConfigSerializer implements ConfigSerializer<ClientConf
     public ClientConfig deserialize(Config config) {
         validate(config);
         return new ClientConfig(
+                new BuilderConfig(
+                        config.get(List.of(KEY_BUILDER, KEY_RESERVED_TOOL_DURABILITY)),
+                        config.get(List.of(KEY_BUILDER, KEY_PASSIVE_MODE))
+                ),
                 new RenderConfig(
                         config.get(List.of(KEY_RENDER, KEY_SHOW_BLOCK_PREVIEW)),
                         config.get(List.of(KEY_RENDER, KEY_SHOW_OTHER_PLAYERS_BUILD)),
@@ -64,13 +70,16 @@ public class ClientConfigConfigSerializer implements ConfigSerializer<ClientConf
                 new ClipboardConfig(
                         config.<List<Config>>get(List.of(KEY_CLIPBOARD, KEY_COLLECTIONS)).stream().map(SnapshotConfigSerializer.INSTANCE::deserialize).toList(),
                         List.of()
-                )
+                ),
+                ClientConfig.DEFAULT.structureMap()
         );
     }
 
     @Override
     public Config serialize(ClientConfig settings) {
         var config = CommentedConfig.inMemory();
+        config.set(List.of(KEY_BUILDER, KEY_RESERVED_TOOL_DURABILITY), settings.builderConfig().reservedToolDurability());
+        config.set(List.of(KEY_BUILDER, KEY_PASSIVE_MODE), settings.builderConfig().passiveMode());
         config.set(List.of(KEY_RENDER, KEY_SHOW_BLOCK_PREVIEW), settings.renderConfig().showBlockPreview());
         config.set(List.of(KEY_RENDER, KEY_SHOW_OTHER_PLAYERS_BUILD), settings.renderConfig().showOtherPlayersBuild());
 //        config.set(List.of(KEY_RENDER, KEY_SHOW_OTHER_PLAYERS_BUILD_TOOLTIPS), settings.renderConfig().showOtherPlayersBuildTooltips());
@@ -87,3 +96,6 @@ public class ClientConfigConfigSerializer implements ConfigSerializer<ClientConf
     }
 
 }
+
+
+

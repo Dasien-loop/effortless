@@ -97,3 +97,6 @@ public record DiagonalWall(
         return BuildMode.DIAGONAL_WALL;
     }
 }
+
+
+

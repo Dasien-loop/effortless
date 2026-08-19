@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 
 import dev.huskuraft.universal.api.core.Item;
 import dev.huskuraft.universal.api.core.ItemStack;
@@ -85,9 +87,15 @@ public interface Storage {
                 storage = switch (player.getGameMode()) {
                     case SURVIVAL, ADVENTURE -> {
                         if (copy) {
-                            yield Storage.create(player.getInventory().getItems().stream().map(ItemStack::copy).toList(), false);
+                            yield Storage.merge(
+                                    Storage.create(player.getInventory().getItems().stream().map(ItemStack::copy).toList(), false),
+                                    Storage.preview(network(player))
+                            );
                         } else {
-                            yield Storage.create(player.getInventory().getItems(), false);
+                            yield Storage.merge(
+                                    Storage.create(player.getInventory().getItems(), false),
+                                    network(player)
+                            );
                         }
                     }
                     case CREATIVE -> Storage.merge(
@@ -123,6 +131,11 @@ public interface Storage {
             }
 
             @Override
+            public Optional<ItemStack> materialize(Item item, int count) {
+                return getStorage().materialize(item, count);
+            }
+
+            @Override
             public int getCount(Item item) {
                 return getStorage().getCount(item);
             }
@@ -133,6 +146,36 @@ public interface Storage {
             }
 
         };
+    }
+
+    static Storage network(Player player) {
+        try {
+            var network = ServiceLoader.load(NetworkStorageProvider.class)
+                    .findFirst()
+                    .map(provider -> provider.create(player))
+                    .orElseGet(Storage::empty);
+            if (player.getWorld().isClient()) {
+                var snapshot = ClientMaterialSnapshotCache.get(player);
+                if (!snapshot.isEmpty()) {
+                    return Storage.merge(network, Storage.create(snapshot, false));
+                }
+            }
+            return network;
+        } catch (ServiceConfigurationError | LinkageError | RuntimeException ignored) {
+            // Optional integrations must never prevent Effortless from loading alone.
+            return Storage.empty();
+        }
+    }
+
+    static List<ItemStack> refinedStorageSnapshot(Player player, java.util.Set<Item> requestedItems) {
+        try {
+            return ServiceLoader.load(NetworkStorageProvider.class)
+                    .findFirst()
+                    .map(provider -> provider.refinedStorageSnapshot(player, requestedItems))
+                    .orElseGet(List::of);
+        } catch (ServiceConfigurationError | LinkageError | RuntimeException ignored) {
+            return List.of();
+        }
     }
 
 
@@ -162,24 +205,43 @@ public interface Storage {
 
             @Override
             public boolean consume(ItemStack stack) {
-                for (var storage : storages) {
-                    if (storage.consume(stack)) {
-                        return true;
-                    }
-                }
-                return false;
+                return consume(stack.getItem(), stack.getCount()) >= stack.getCount();
             }
 
             @Override
             public int consume(Item item, int count) {
                 var consumed = 0;
                 for (var storage : storages) {
-                    consumed += storage.consume(item, count - consumed);
                     if (consumed >= count) {
+                        return consumed;
+                    }
+                    // Keep search and consume bound to the same source. If a
+                    // source reports material but cannot complete its own
+                    // extraction, falling through to another source causes
+                    // the operation to place a block without charging the
+                    // source that supplied the preview stack.
+                    var available = Math.min(count - consumed, storage.getCount(item));
+                    if (available <= 0) {
+                        continue;
+                    }
+                    var extracted = storage.consume(item, available);
+                    consumed += extracted;
+                    if (extracted < available) {
                         return consumed;
                     }
                 }
                 return consumed;
+            }
+
+            @Override
+            public Optional<ItemStack> materialize(Item item, int count) {
+                for (var storage : storages) {
+                    var materialized = storage.materialize(item, count);
+                    if (materialized.isPresent()) {
+                        return materialized;
+                    }
+                }
+                return Optional.empty();
             }
 
             @Override
@@ -205,6 +267,63 @@ public interface Storage {
 
     static Storage empty() {
         return EMPTY;
+    }
+
+    /**
+     * Exposes a network for client-side previews without mutating the real network.
+     * Reservations are kept locally so a multi-block preview still accounts for
+     * items already consumed by earlier operations in the same preview.
+     */
+    static Storage preview(Storage delegate) {
+        return new Storage() {
+            private final Map<Item, Integer> reserved = new HashMap<>();
+
+            @Override
+            public Optional<ItemStack> searchTag(ItemStack stack) {
+                return delegate.searchTag(stack);
+            }
+
+            @Override
+            public Optional<ItemStack> search(Item item) {
+                return getCount(item) > 0
+                        ? Optional.of(item.getDefaultStack())
+                        : Optional.empty();
+            }
+
+            @Override
+            public boolean consume(ItemStack stack) {
+                return consume(stack.getItem(), stack.getCount()) >= stack.getCount();
+            }
+
+            @Override
+            public int consume(Item item, int count) {
+                if (count <= 0) {
+                    return 0;
+                }
+                var available = getCount(item);
+                var consumed = Math.min(available, count);
+                if (consumed > 0) {
+                    reserved.merge(item, consumed, Integer::sum);
+                }
+                return consumed;
+            }
+
+            @Override
+            public Optional<ItemStack> materialize(Item item, int count) {
+                return Optional.empty();
+            }
+
+            @Override
+            public int getCount(Item item) {
+                var remaining = (long) delegate.getCount(item) - reserved.getOrDefault(item, 0);
+                return (int) Math.max(0, Math.min(Integer.MAX_VALUE, remaining));
+            }
+
+            @Override
+            public List<ItemStack> contents() {
+                return delegate.contents();
+            }
+        };
     }
 
     static Storage create(List<ItemStack> itemStacks, boolean infinite) {
@@ -236,18 +355,7 @@ public interface Storage {
 
             @Override
             public boolean consume(ItemStack itemStack) {
-                var found = searchTag(itemStack);
-                if (found.isEmpty()) {
-                    return false;
-                }
-                if (infinite) {
-                    return true;
-                }
-                if (itemStack.getCount() > found.get().getCount()) {
-                    return false;
-                }
-                found.get().decrease(itemStack.getCount());
-                return true;
+                return consume(itemStack.getItem(), itemStack.getCount()) >= itemStack.getCount();
             }
 
             @Override
@@ -298,6 +406,15 @@ public interface Storage {
     boolean consume(ItemStack stack);
 
     int consume(Item item, int count);
+
+    /**
+     * Retrieves real material for an operation when a storage backend requires
+     * its own secure extraction path. Ordinary inventories keep using search
+     * and consume, so optional integrations can opt in without changing them.
+     */
+    default Optional<ItemStack> materialize(Item item, int count) {
+        return Optional.empty();
+    }
 
     int getCount(Item item);
 

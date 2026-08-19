@@ -25,6 +25,12 @@ public class BlockOperationRenderer implements OperationRenderer {
 
     public static final Color BLOCK_HIDEEN_COLOR = null;
 
+    private static volatile boolean serverPreviewHasAllRequiredItems;
+
+    public static void setServerPreviewHasAllRequiredItems(boolean value) {
+        serverPreviewHasAllRequiredItems = value;
+    }
+
     private final BlockOperationResult result;
 
     public BlockOperationRenderer(OperationsRenderer operationsRenderer, BlockOperationResult result) {
@@ -40,7 +46,9 @@ public class BlockOperationRenderer implements OperationRenderer {
                 if (!blockOperationResult.getBlockStateToPlace().isAir()) {
                     return switch (blockOperationResult.result()) {
                         case SUCCESS, SUCCESS_PARTIAL, CONSUME -> BLOCK_PLACE_SUCCESS_COLOR;
-                        case FAIL_PLACE_ITEM_INSUFFICIENT, FAIL_PLACE_ITEM_NOT_BLOCK -> BLOCK_PLACE_INSUFFICIENT_COLOR;
+                        case FAIL_PLACE_ITEM_INSUFFICIENT -> serverPreviewHasAllRequiredItems
+                                ? BLOCK_PLACE_SUCCESS_COLOR : BLOCK_PLACE_INSUFFICIENT_COLOR;
+                        case FAIL_PLACE_ITEM_NOT_BLOCK -> BLOCK_PLACE_INSUFFICIENT_COLOR;
                         case FAIL_WORLD_HEIGHT, FAIL_WORLD_BORDER, FAIL_WORLD_INCORRECT_DIM -> BLOCK_HIDEEN_COLOR;
                         default -> BLOCK_PLACE_FAIL_COLOR;
                     };
@@ -140,3 +148,6 @@ public class BlockOperationRenderer implements OperationRenderer {
     }
 
 }
+
+
+

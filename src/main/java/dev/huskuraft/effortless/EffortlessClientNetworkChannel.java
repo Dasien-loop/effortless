@@ -9,6 +9,7 @@ import dev.huskuraft.effortless.networking.packets.AllPacketListener;
 import dev.huskuraft.effortless.networking.packets.player.PlayerBuildPacket;
 import dev.huskuraft.effortless.networking.packets.player.PlayerBuildTooltipPacket;
 import dev.huskuraft.effortless.networking.packets.player.PlayerCommandPacket;
+import dev.huskuraft.effortless.networking.packets.player.PlayerMaterialSnapshotPacket;
 import dev.huskuraft.effortless.networking.packets.player.PlayerPermissionCheckPacket;
 import dev.huskuraft.effortless.networking.packets.player.PlayerSettingsPacket;
 import dev.huskuraft.effortless.networking.packets.player.PlayerSnapshotCapturePacket;
@@ -39,10 +40,10 @@ public final class EffortlessClientNetworkChannel extends NetworkChannel<AllPack
         registerPacket(PlayerBuildPacket.class, new PlayerBuildPacket.Serializer());
         registerPacket(PlayerPermissionCheckPacket.class, new PlayerPermissionCheckPacket.Serializer());
         registerPacket(PlayerBuildTooltipPacket.class, new PlayerBuildTooltipPacket.Serializer());
+        registerPacket(PlayerMaterialSnapshotPacket.class, new PlayerMaterialSnapshotPacket.Serializer());
         registerPacket(PlayerSnapshotCapturePacket.class, new PlayerSnapshotCapturePacket.Serializer());
         registerPacket(PlayerSnapshotSharePacket.class, new PlayerSnapshotSharePacket.Serializer());
 
-        getEntrance().getEventRegistry().getRegisterNetworkEvent().register(this::onRegisterNetwork);
     }
 
     private EffortlessClient getEntrance() {
@@ -105,8 +106,29 @@ public final class EffortlessClientNetworkChannel extends NetworkChannel<AllPack
             if (!isValidReceiver()) {
                 return;
             }
-            getEntrance().getClient().execute(() -> getEntrance().getStructureBuilder().onTooltipReceived(player, packet.operationTooltip()));
+            // A client-bound payload is sent by the logical server.  Its
+            // context player is therefore not a reliable UI owner, especially
+            // in an integrated server.  Preview entries always belong to the
+            // local client player.
+            var localPlayer = getEntrance().getClient().getPlayer();
+            if (localPlayer == null) {
+                return;
+            }
+            getEntrance().getClient().execute(() -> getEntrance().getStructureBuilder().onTooltipReceived(localPlayer, packet.operationTooltip()));
 
+        }
+
+        @Override
+        public void handle(PlayerMaterialSnapshotPacket packet, Player player) {
+            if (!isValidReceiver()) {
+                return;
+            }
+            var localPlayer = getEntrance().getClient().getPlayer();
+            if (localPlayer == null || !localPlayer.getId().equals(packet.playerId())) {
+                return;
+            }
+            getEntrance().getClient().execute(() ->
+                    getEntrance().getStructureBuilder().onMaterialSnapshotReceived(localPlayer, packet));
         }
 
         @Override
@@ -136,3 +158,6 @@ public final class EffortlessClientNetworkChannel extends NetworkChannel<AllPack
     }
 
 }
+
+
+

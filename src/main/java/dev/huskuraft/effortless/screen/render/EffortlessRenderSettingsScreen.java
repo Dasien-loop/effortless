@@ -58,3 +58,6 @@ public class EffortlessRenderSettingsScreen extends AbstractPanelScreen {
         return (EffortlessClient) super.getEntrance();
     }
 }
+
+
+

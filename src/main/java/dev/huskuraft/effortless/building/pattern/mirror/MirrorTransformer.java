@@ -127,3 +127,6 @@ public record MirrorTransformer(UUID id, Text name, Vector3d position, Axis axis
         return List.of(Text.text("Position " +  position.x() + " " + position.y() + " " + position.z()), Text.text("Axis ").append(axis.getDisplayName()), Text.text("Size " + size));
     }
 }
+
+
+

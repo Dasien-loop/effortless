@@ -6,8 +6,8 @@ import java.util.UUID;
 
 import dev.huskuraft.effortless.building.pattern.Pattern;
 import dev.huskuraft.universal.api.config.ConfigSerializer;
-import dev.huskuraft.universal.api.nightconfig.core.Config;
-import dev.huskuraft.universal.api.nightconfig.core.ConfigSpec;
+import com.electronwill.nightconfig.core.Config;
+import com.electronwill.nightconfig.core.ConfigSpec;
 
 public class PatternConfigSerializer implements ConfigSerializer<Pattern> {
 
@@ -63,3 +63,6 @@ public class PatternConfigSerializer implements ConfigSerializer<Pattern> {
     }
 
 }
+
+
+

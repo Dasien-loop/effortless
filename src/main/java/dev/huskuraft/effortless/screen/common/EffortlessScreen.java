@@ -15,3 +15,6 @@ public abstract class EffortlessScreen extends AbstractScreen {
         return (EffortlessClient) super.getEntrance();
     }
 }
+
+
+

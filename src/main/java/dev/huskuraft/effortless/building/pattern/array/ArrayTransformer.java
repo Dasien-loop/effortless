@@ -113,3 +113,6 @@ public record ArrayTransformer(UUID id, Text name, Vector3i offset, int count) i
         return List.of(Text.text("Offset " + offset.x() + " " + offset.y() + " " + offset.z()), Text.text("Count " + count));
     }
 }
+
+
+

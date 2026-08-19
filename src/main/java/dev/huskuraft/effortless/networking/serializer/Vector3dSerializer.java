@@ -24,3 +24,6 @@ public class Vector3dSerializer implements NetByteBufSerializer<Vector3d> {
     }
 
 }
+
+
+

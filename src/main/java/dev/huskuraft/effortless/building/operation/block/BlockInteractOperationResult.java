@@ -88,3 +88,6 @@ public class BlockInteractOperationResult extends BlockOperationResult {
 
 
 }
+
+
+

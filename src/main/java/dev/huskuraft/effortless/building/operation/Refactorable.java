@@ -7,3 +7,6 @@ public interface Refactorable<O> extends Trait {
     O refactor(RefactorContext source);
 
 }
+
+
+

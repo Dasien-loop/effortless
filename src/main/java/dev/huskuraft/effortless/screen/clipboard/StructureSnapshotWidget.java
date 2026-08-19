@@ -74,3 +74,6 @@ public final class StructureSnapshotWidget extends AbstractWidget {
         this.snapshot = snapshot;
     }
 }
+
+
+

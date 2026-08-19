@@ -10,3 +10,6 @@ public interface PositionBounded {
     boolean isInBounds(Vector3d position);
 
 }
+
+
+

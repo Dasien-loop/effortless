@@ -131,3 +131,6 @@ public class EffortlessGlobalGeneralSettingsScreen extends AbstractPanelScreen {
         this.resetButton.setActive(!config.equals(defaultConfig));
     }
 }
+
+
+

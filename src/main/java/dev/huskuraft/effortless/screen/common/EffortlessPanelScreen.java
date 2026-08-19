@@ -17,3 +17,6 @@ public abstract class EffortlessPanelScreen extends AbstractPanelScreen {
         return (EffortlessClient) super.getEntrance();
     }
 }
+
+
+

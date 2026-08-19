@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.auto.service.AutoService;
 
-import dev.huskuraft.universal.api.events.impl.EventRegistry;
+import dev.huskuraft.universal.api.events.CommonEventRegistry;
 import dev.huskuraft.universal.api.platform.Entrance;
 import dev.huskuraft.universal.api.text.ChatFormatting;
 import dev.huskuraft.universal.api.text.Text;
@@ -17,10 +17,10 @@ public class Effortless implements Entrance {
 
     public static final String MOD_ID = "effortless";
     public static final String DEFAULT_CHANNEL = "default";
-    public static final int PROTOCOL_VERSION = 13;
+    public static final int PROTOCOL_VERSION = 14;
     public static final Logger LOGGER = LoggerFactory.getLogger(Effortless.class.getName());
 
-    private final EventRegistry eventRegistry = PlatformLoader.getSingleton(EventRegistry.class);
+    private final CommonEventRegistry eventRegistry = PlatformLoader.getSingleton(CommonEventRegistry.class);
     private final EffortlessNetworkChannel networkChannel = new EffortlessNetworkChannel(this);
     private final EffortlessStructureBuilder structureBuilder = new EffortlessStructureBuilder(this);
     private final EffortlessConfigStorage sessionConfigStorage = new EffortlessConfigStorage(this);
@@ -39,7 +39,7 @@ public class Effortless implements Entrance {
         return msg;
     }
 
-    public EventRegistry getEventRegistry() {
+    public CommonEventRegistry getEventRegistry() {
         return eventRegistry;
     }
 
@@ -69,3 +69,6 @@ public class Effortless implements Entrance {
     }
 
 }
+
+
+

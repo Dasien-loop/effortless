@@ -127,3 +127,6 @@ public class EffortlessStructureSnapshotsLibraryScreen extends AbstractPanelScre
     }
 
 }
+
+
+

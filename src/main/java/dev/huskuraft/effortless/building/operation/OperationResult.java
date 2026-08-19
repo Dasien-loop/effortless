@@ -24,3 +24,6 @@ public abstract class OperationResult {
     public abstract List<ItemStack> getItemSummary(ItemSummary itemSummary);
 
 }
+
+
+

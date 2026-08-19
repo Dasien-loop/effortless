@@ -29,7 +29,7 @@ public class BlockStateUpdateOperationResult extends BlockOperationResult {
             return new EmptyOperation(operation.getContext());
         }
 
-        return new BlockStateUpdateOperation(
+        return BlockStateUpdateOperation.restoring(
                 operation.getSession(),
                 operation.getContext(),
                 operation.getStorage(),
@@ -114,3 +114,6 @@ public class BlockStateUpdateOperationResult extends BlockOperationResult {
 
 
 }
+
+
+

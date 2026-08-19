@@ -6,36 +6,42 @@ on:
       - "v*"
 
 jobs:
-  gradle-publish:
+  build:
 
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          submodules: 'true'
 
-      - name: Setup JDKs
+      - name: Setup JDK
         uses: actions/setup-java@v4
         with:
-          java-version: |
-            16
-            17
-            21
+          java-version: 21
           distribution: 'zulu'
           cache: 'gradle'
 
-      - name: Build with Gradle
-        uses: gradle/actions/setup-gradle@v3
-        env:
-          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
-          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+      # Gradle downloads the Java 17 and 25 toolchains through the Foojay resolver.
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build release artifacts
+        run: ./gradlew build
+
+      - name: Collect release artifacts
+        run: |
+          mkdir -p release
+          find forge-1.20.1/forge/mc-1-20-1/build/libs neoforge-1.21.1/build/libs neoforge-26.1.2/build/libs \
+            -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' -exec cp {} release/ \;
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
         with:
-          arguments: publish
+          name: mod-jars
+          path: release/*.jar
 
   github-release:
-    needs: gradle-publish
+    needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -43,8 +49,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
         with:
-          submodules: 'true'
+          name: mod-jars
+          path: release
 
       - name: Release
         uses: softprops/action-gh-release@v1
+        with:
+          files: release/*.jar

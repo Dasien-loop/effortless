@@ -41,6 +41,7 @@ public record OperationTooltip(
     }
 
     public enum Type {
+        PREVIEW("preview"),
         BUILD("build"),
         UNDO_SUCCESS("undo_success"),
         REDO_SUCCESS("redo_success"),
@@ -61,3 +62,6 @@ public record OperationTooltip(
 
 
 }
+
+
+

@@ -70,3 +70,6 @@ public final class StructureSnapshotList extends EditableEntryList<Snapshot> {
 
     }
 }
+
+
+

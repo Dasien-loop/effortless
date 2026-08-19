@@ -11,9 +11,9 @@ import dev.huskuraft.effortless.session.config.ConstraintConfig;
 import dev.huskuraft.effortless.session.config.SessionConfig;
 import dev.huskuraft.universal.api.config.ConfigSerializer;
 import dev.huskuraft.universal.api.core.ResourceLocation;
-import dev.huskuraft.universal.api.nightconfig.core.CommentedConfig;
-import dev.huskuraft.universal.api.nightconfig.core.Config;
-import dev.huskuraft.universal.api.nightconfig.core.ConfigSpec;
+import com.electronwill.nightconfig.core.CommentedConfig;
+import com.electronwill.nightconfig.core.Config;
+import com.electronwill.nightconfig.core.ConfigSpec;
 
 public class SessionConfigSerializer implements ConfigSerializer<SessionConfig> {
 
@@ -278,3 +278,6 @@ public class SessionConfigSerializer implements ConfigSerializer<SessionConfig> 
 
 
 }
+
+
+

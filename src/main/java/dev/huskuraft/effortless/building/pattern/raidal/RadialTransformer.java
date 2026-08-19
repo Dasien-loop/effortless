@@ -125,3 +125,6 @@ public record RadialTransformer(UUID id, Text name, Vector3d position, Axis axis
         return List.of(Text.text("Position " + position.x() + " " + position.y() + " " + position.z()), Text.text("Slices " + slices), Text.text("Radius " + radius), Text.text("Length " + length));
     }
 }
+
+
+

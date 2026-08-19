@@ -23,3 +23,6 @@ public class ModSerializer implements NetByteBufSerializer<Mod> {
         byteBuf.writeNullable(mod.getName(), NetByteBuf::writeString);
     }
 }
+
+
+

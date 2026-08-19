@@ -10,3 +10,6 @@ public final class Icons {
     public static final ResourceLocation PLAYERS = ResourceLocation.of(Effortless.MOD_ID, "textures/gui/players.png");
 
 }
+
+
+

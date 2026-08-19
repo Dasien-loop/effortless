@@ -52,3 +52,6 @@ public class EffortlessSessionStatusScreen extends AbstractPanelScreen {
         return PANEL_TITLE_HEIGHT_1 + (getMessages().size() + 2) * 10 + 4 + Dimens.Screen.BUTTON_ROW_1;
     }
 }
+
+
+

@@ -1,6 +1,19 @@
 ## Changelog
 ----------
 
+[中文更新日志](CHANGELOG_zh-CN.md)
+
+### 3.4.0 - Dasien maintenance port - 2026-08-17
+
+* Port the maintained build to Forge 1.20.1, NeoForge 1.21.1, and NeoForge 26.1.2 using standard Gradle tooling.
+* Add optional material integrations for AE2, Beyond Dimensions, Refined Storage, Sophisticated Backpacks, and ProjectE where supported.
+* Fix network material lookup, including AE2 and Refined Storage wireless terminals stored in Curios slots.
+* Fix placement, breaking, undo/redo, preview, and radial-menu behavior across all supported targets.
+* Stabilize and optimize network-backed previews, including server-side material checks and refresh throttling.
+* Preserve upstream attribution and LGPLv3 licensing. Maintenance port by Dasien.
+
+----------
+
 ### 3.4.0
 
 * Add support for OpenPAC ([#202](https://github.com/huskcasaca/effortless/pull/202))

@@ -21,3 +21,6 @@ public interface OperationFilter<O> extends Predicate<O> {
     }
 
 }
+
+
+

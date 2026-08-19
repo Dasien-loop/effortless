@@ -126,3 +126,6 @@ public class EffortlessStructureSnapshotsHistoryScreen extends AbstractPanelScre
     }
 
 }
+
+
+

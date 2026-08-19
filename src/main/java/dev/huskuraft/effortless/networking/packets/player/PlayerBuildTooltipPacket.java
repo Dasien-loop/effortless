@@ -48,6 +48,12 @@ public record PlayerBuildTooltipPacket(
         );
     }
 
+    public static PlayerBuildTooltipPacket preview(OperationResult operationResult) {
+        return new PlayerBuildTooltipPacket(
+                operationResult.getTooltip().withType(OperationTooltip.Type.PREVIEW)
+        );
+    }
+
     public static PlayerBuildTooltipPacket undo(OperationResult operationResult) {
         return new PlayerBuildTooltipPacket(
                 operationResult.getTooltip().withType(OperationTooltip.Type.UNDO_SUCCESS)
@@ -77,3 +83,6 @@ public record PlayerBuildTooltipPacket(
     }
 
 }
+
+
+

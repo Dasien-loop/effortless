@@ -61,6 +61,13 @@ public class OperationsRenderer {
         results.put(id, new RenderFadeEntry<>(createRenderer(result)));
     }
 
+    public void keep(Object id) {
+        var entry = results.get(id);
+        if (entry != null) {
+            entry.keep();
+        }
+    }
+
     public void remove(Object id) {
         results.remove(id);
     }

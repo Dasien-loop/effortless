@@ -37,6 +37,9 @@ public record Pattern(
     }
 
     public float volumeMultiplier() {
+        if (!enabled) {
+            return 1f;
+        }
         var multiplier = 1f;
         for (var transformer : transformers()) {
             multiplier = multiplier * transformer.volumeMultiplier();
@@ -62,3 +65,6 @@ public record Pattern(
         }
     }
 }
+
+
+

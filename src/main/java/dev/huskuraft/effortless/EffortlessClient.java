@@ -2,7 +2,7 @@ package dev.huskuraft.effortless;
 
 import com.google.auto.service.AutoService;
 
-import dev.huskuraft.universal.api.events.impl.ClientEventRegistry;
+import dev.huskuraft.universal.api.events.ClientEventRegistry;
 import dev.huskuraft.universal.api.platform.ClientEntrance;
 import dev.huskuraft.universal.api.platform.PlatformLoader;
 
@@ -57,3 +57,6 @@ public class EffortlessClient implements ClientEntrance {
     }
 
 }
+
+
+

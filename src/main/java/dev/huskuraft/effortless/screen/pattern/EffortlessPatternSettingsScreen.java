@@ -62,3 +62,6 @@ public class EffortlessPatternSettingsScreen extends AbstractPanelScreen {
         return (EffortlessClient) super.getEntrance();
     }
 }
+
+
+

@@ -125,3 +125,6 @@ public class EffortlessSettingsScreen extends AbstractPanelScreen {
 //        this.renderButton.setTooltip(renderTooltip);
     }
 }
+
+
+

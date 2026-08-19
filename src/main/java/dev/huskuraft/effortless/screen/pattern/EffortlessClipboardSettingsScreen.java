@@ -49,3 +49,6 @@ public class EffortlessClipboardSettingsScreen extends AbstractPanelScreen {
         return (EffortlessClient) super.getEntrance();
     }
 }
+
+
+

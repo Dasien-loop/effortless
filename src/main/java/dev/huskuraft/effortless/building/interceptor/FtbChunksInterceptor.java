@@ -20,7 +20,15 @@ public final class FtbChunksInterceptor implements BuildInterceptor {
     public FtbChunksInterceptor(
             Entrance entrance
     ) {
-        this.ftbChunkClaimsManager = entrance.findPlugin(FtbChunksPlugin.class).map(FtbChunksPlugin::getClaimManager).orElse(null);
+        this.ftbChunkClaimsManager = findClaimsManager(entrance);
+    }
+
+    private static FtbChunkClaimsManager findClaimsManager(Entrance entrance) {
+        try {
+            return entrance.findPlugin(FtbChunksPlugin.class).map(FtbChunksPlugin::getClaimManager).orElse(null);
+        } catch (RuntimeException | LinkageError ignored) {
+            return null;
+        }
     }
 
     public FtbChunkClaimsManager getChunkClaimsManager() {
@@ -37,7 +45,14 @@ public final class FtbChunksInterceptor implements BuildInterceptor {
         if (!isEnabled()) {
             return true;
         }
-        var claim = getChunkClaimsManager().get(world, blockPosition);
-        return claim == null || claim.isTeamMember(player.getId());
+        try {
+            var claim = getChunkClaimsManager().get(world, blockPosition);
+            return claim == null || claim.isTeamMember(player.getId());
+        } catch (RuntimeException | LinkageError ignored) {
+            return true;
+        }
     }
 }
+
+
+

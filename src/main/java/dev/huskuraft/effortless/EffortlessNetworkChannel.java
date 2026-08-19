@@ -11,6 +11,7 @@ import dev.huskuraft.effortless.networking.packets.AllPacketListener;
 import dev.huskuraft.effortless.networking.packets.player.PlayerBuildPacket;
 import dev.huskuraft.effortless.networking.packets.player.PlayerBuildTooltipPacket;
 import dev.huskuraft.effortless.networking.packets.player.PlayerCommandPacket;
+import dev.huskuraft.effortless.networking.packets.player.PlayerMaterialSnapshotPacket;
 import dev.huskuraft.effortless.networking.packets.player.PlayerPermissionCheckPacket;
 import dev.huskuraft.effortless.networking.packets.player.PlayerSettingsPacket;
 import dev.huskuraft.effortless.networking.packets.player.PlayerSnapshotCapturePacket;
@@ -41,10 +42,10 @@ public final class EffortlessNetworkChannel extends NetworkChannel<AllPacketList
         registerPacket(PlayerBuildPacket.class, new PlayerBuildPacket.Serializer());
         registerPacket(PlayerPermissionCheckPacket.class, new PlayerPermissionCheckPacket.Serializer());
         registerPacket(PlayerBuildTooltipPacket.class, new PlayerBuildTooltipPacket.Serializer());
+        registerPacket(PlayerMaterialSnapshotPacket.class, new PlayerMaterialSnapshotPacket.Serializer());
         registerPacket(PlayerSnapshotCapturePacket.class, new PlayerSnapshotCapturePacket.Serializer());
         registerPacket(PlayerSnapshotSharePacket.class, new PlayerSnapshotSharePacket.Serializer());
 
-        getEntrance().getEventRegistry().getRegisterNetworkEvent().register(this::onRegisterNetwork);
     }
 
     public Effortless getEntrance() {
@@ -108,6 +109,10 @@ public final class EffortlessNetworkChannel extends NetworkChannel<AllPacketList
         }
 
         @Override
+        public void handle(PlayerMaterialSnapshotPacket packet, Player player) {
+        }
+
+        @Override
         public void handle(SessionPacket packet, Player player) {
             getEntrance().getServer().execute(() -> {
                 getEntrance().getSessionManager().onSession(packet.session(), player);
@@ -148,3 +153,6 @@ public final class EffortlessNetworkChannel extends NetworkChannel<AllPacketList
     }
 
 }
+
+
+

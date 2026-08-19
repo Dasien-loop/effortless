@@ -70,3 +70,6 @@ public final class PatternList extends EditableEntryList<Pattern> {
 
     }
 }
+
+
+

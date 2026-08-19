@@ -348,6 +348,10 @@ public final class EffortlessClientManager implements ClientManager {
     }
 
     public void onClientTick(Client client, ClientTick.Phase phase) {
+        if (client == null) {
+            return;
+        }
+        setRunningClient(client);
         switch (phase) {
             case START -> {
                 tickCooldown();
@@ -384,3 +388,6 @@ public final class EffortlessClientManager implements ClientManager {
         }
     }
 }
+
+
+
