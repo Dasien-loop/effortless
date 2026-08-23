@@ -53,13 +53,16 @@ public abstract class BlockOperation implements Operation {
         this.storage = storage;
         this.interaction = interaction;
         this.blockState = session.getWorld().getBlockState(interaction.getBlockPosition());
-        var blockEntity = session.getWorld().getBlockEntity(interaction.getBlockPosition());
-        if (blockEntity != null) {
-            // TODO: 4/6/24 clear position & id tags in 1.17.1
-            this.entityTag = blockEntity.getTag();
-        } else {
-            this.entityTag = null;
+        RecordTag copiedTag = null;
+        try {
+            var blockEntity = session.getWorld().getBlockEntity(interaction.getBlockPosition());
+            if (blockEntity != null) {
+                copiedTag = blockEntity.getTag();
+            }
+        } catch (RuntimeException ignored) {
+            // Formed multiblocks and other mod tiles can throw while serializing.
         }
+        this.entityTag = copiedTag;
         this.extras = extras;
     }
 
@@ -134,11 +137,15 @@ public abstract class BlockOperation implements Operation {
     }
 
     public RecordTag getEntityTagInWorld() {
-        var blockEntity = getWorld().getBlockEntity(getBlockPosition());
-        if (blockEntity == null) {
+        try {
+            var blockEntity = getWorld().getBlockEntity(getBlockPosition());
+            if (blockEntity == null) {
+                return null;
+            }
+            return blockEntity.getTag();
+        } catch (RuntimeException ignored) {
             return null;
         }
-        return blockEntity.getTag();
     }
 
     public enum Type {

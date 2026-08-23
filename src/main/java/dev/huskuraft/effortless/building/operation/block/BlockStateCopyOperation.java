@@ -74,7 +74,11 @@ public class BlockStateCopyOperation extends BlockOperation {
         var entityTagAfterOp = getEntityTagInWorld();
 
         if (getContext().isBuildClientType() && getBlockPosition().toVector3d().distance(getPlayer().getEyePosition()) <= 32) {
-            getPlayer().getClient().getParticleEngine().crack(getBlockPosition(), getInteraction().getDirection());
+            try {
+                getPlayer().getClient().getParticleEngine().crack(getBlockPosition(), getInteraction().getDirection());
+            } catch (RuntimeException ignored) {
+                // Some formed multiblock tiles expose an empty VoxelShape.
+            }
         }
 
         return new BlockStateCopyOperationResult(this, result, blockStateBeforeOp, blockStateAfterOp, entityTagBeforeOp, entityTagAfterOp);

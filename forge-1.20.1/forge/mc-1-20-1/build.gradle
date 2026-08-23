@@ -1,0 +1,118 @@
+plugins {
+    id 'idea'
+    id 'net.minecraftforge.gradle' version '6.0.54'
+}
+
+group = rootProject.findProperty('mod_group_id') + '.forge'
+version = rootProject.findProperty('mod_version')
+
+base {
+    archivesName = "${rootProject.findProperty('mod_id')}-forge-1.20.1"
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(17)
+    withSourcesJar()
+}
+
+repositories {
+    maven { url = 'https://maven.theillusivec4.top/' }
+    mavenCentral()
+    // CurseForge Maven artifacts are processed by ForgeGradle's fg.deobf,
+    // which is required for third-party Forge jars in a userdev run.
+    maven {
+        url = 'https://www.cursemaven.com'
+        content { includeGroup 'curse.maven' }
+    }
+    maven {
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
+}
+
+configurations {
+    embeddedJson
+}
+
+minecraft {
+    mappings channel: 'official', version: '1.20.1'
+    accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+
+    runs {
+        configureEach {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            jvmArg '-Dmixin.env.remapRefMap=true'
+            jvmArg "-Dmixin.env.refMapRemappingFile=${file("${buildDir}/createSrgToMcp/output.srg").absolutePath}"
+            mods {
+                effortless {
+                    source sourceSets.main
+                    source project(':').sourceSets.main
+                }
+            }
+        }
+        client {}
+        server {
+            args '--nogui'
+        }
+    }
+}
+
+dependencies {
+    minecraft 'net.minecraftforge:forge:1.20.1-47.2.20'
+    implementation project(':')
+    minecraftLibrary(project(':local-api')) {
+        transitive = false
+    }
+    implementation 'com.electronwill.night-config:core:3.6.7'
+    implementation 'com.electronwill.night-config:toml:3.6.7'
+    implementation 'com.electronwill.night-config:json:3.6.7'
+    embeddedJson 'com.electronwill.night-config:json:3.6.7'
+    annotationProcessor 'com.google.auto.service:auto-service:1.1.1'
+    compileOnly 'com.google.auto.service:auto-service:1.1.1'
+    compileOnly fg.deobf('maven.modrinth:ae2:15.4.10')
+    compileOnly fg.deobf('maven.modrinth:beyonddimensions:0.7.27-1.20.1-forge')
+    compileOnly fg.deobf('curse.maven:jade-324717:8479276')
+    compileOnly fg.deobf('curse.maven:jade-addons-583345:8203724')
+    compileOnly fg.deobf('curse.maven:jei-238222:8570086')
+    compileOnly fg.deobf('top.theillusivec4.curios:curios-forge:5.14.1+1.20.1')
+}
+
+sourceSets.main.resources.srcDir("${rootProject.projectDir}/src/main/resources")
+
+processResources {
+    def props = [
+        mod_id: rootProject.findProperty('mod_id'),
+        mod_name: rootProject.findProperty('mod_name'),
+        mod_license: rootProject.findProperty('mod_license'),
+        mod_version: rootProject.findProperty('mod_version'),
+        mod_authors: rootProject.findProperty('mod_authors'),
+        mod_description: rootProject.findProperty('mod_description'),
+        loader_version_range: '[47,)',
+        forge_version_range: '[47.2,)',
+        minecraft_version_range: '[1.20.1,1.21)',
+    ]
+    inputs.properties props
+    filesMatching('META-INF/mods.toml') {
+        expand props
+    }
+}
+
+tasks.named('jar', Jar).configure {
+    dependsOn ':local-api:classes'
+    from project(':').sourceSets.main.output
+    from project(':local-api').layout.buildDirectory.dir('classes/java/main')
+    from({
+        configurations.embeddedJson.collect { zipTree(it) }
+    }) {
+        include 'com/electronwill/nightconfig/json/**'
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// A standalone `jar` invocation must still produce a production Forge jar.
+// ForgeGradle remaps Minecraft references in the reobf task.
+tasks.named('jar').configure {
+    finalizedBy('reobfJar')
+}

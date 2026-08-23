@@ -64,7 +64,6 @@ import dev.huskuraft.effortless.networking.packets.player.PlayerBuildPacket;
 import dev.huskuraft.effortless.networking.packets.player.PlayerCommandPacket;
 import dev.huskuraft.effortless.networking.packets.player.PlayerMaterialSnapshotPacket;
 import dev.huskuraft.effortless.renderer.opertaion.children.BlockOperationRenderer;
-import dev.huskuraft.effortless.renderer.outliner.OutlineRenderLayers;
 import dev.huskuraft.effortless.screen.wheel.AbstractWheelScreen;
 import dev.huskuraft.effortless.session.config.ConstraintConfig;
 import dev.huskuraft.effortless.session.config.SessionConfig;
@@ -125,12 +124,15 @@ public final class EffortlessClientStructureBuilder extends StructureBuilder {
 
             var finalizedContext = context.finalize(player, BuildStage.INTERACT);
             var clientContext = finalizedContext.withBuildType(BuildType.BUILD_CLIENT);
-            var result = new BatchBuildSession(getEntrance(), player, clientContext).commit();
+            try {
+                var result = new BatchBuildSession(getEntrance(), player, clientContext).commit();
+                showContext(context.id(), 1024, player, context, result);
+                playSoundInBatch(player, result);
+                showTooltip(context.id(), 1024, player, result.getTooltip());
+            } catch (RuntimeException exception) {
+                Effortless.LOGGER.warn("Client preview commit failed", exception);
+            }
             getEntrance().getChannel().sendPacket(new PlayerBuildPacket(getPlayer().getId(), finalizedContext));
-            showContext(context.id(), 1024, player, context, result);
-
-            playSoundInBatch(player, result);
-            showTooltip(context.id(), 1024, player, result.getTooltip());
             getEntrance().getClientManager().getTooltipRenderer().hideEntry(generateId(player.getId(), Context.class), 0, true);
 
             return BuildResult.COMPLETED;
@@ -738,8 +740,10 @@ public final class EffortlessClientStructureBuilder extends StructureBuilder {
 
     private void keepPreviewContext(UUID uuid, Context context) {
         getEntrance().getClientManager().getPatternRenderer().keep(uuid);
-        if (!context.interactions().isEmpty()) {
+        if (!context.interactions().isEmpty() && context.buildState() != BuildState.PASTE_STRUCTURE) {
             getEntrance().getClientManager().getOutlineRenderer().keep(generateId(uuid, BoundingBox3d.class));
+        } else {
+            getEntrance().getClientManager().getOutlineRenderer().remove(generateId(uuid, BoundingBox3d.class));
         }
         getEntrance().getClientManager().getOperationsRenderer().keep(uuid);
         for (var color : BlockOperationRenderer.getAllColors()) {
@@ -778,12 +782,11 @@ public final class EffortlessClientStructureBuilder extends StructureBuilder {
         }
         getEntrance().getClientManager().getPatternRenderer().showPattern(uuid, context);
 
-        if (context.interactions().isEmpty()) {
+        if (context.interactions().isEmpty() || context.buildState() == BuildState.PASTE_STRUCTURE) {
             getEntrance().getClientManager().getOutlineRenderer().remove(generateId(uuid, BoundingBox3d.class));
         } else {
             var box = BoundingBox3d.fromLowerCornersOf(context.interactions().results().stream().filter(Objects::nonNull).map(BlockInteraction::getBlockPosition).map(BlockPosition::toVector3i).toArray(Vector3i[]::new));
             getEntrance().getClientManager().getOutlineRenderer().showBoundingBox(generateId(uuid, BoundingBox3d.class), box)
-                    .texture(OutlineRenderLayers.CHECKERED_THIN_TEXTURE_LOCATION)
                     .lightMap(LightTexture.FULL_BLOCK)
                     .disableNormals()
                     .colored(Color.DARK_GRAY)
@@ -802,7 +805,6 @@ public final class EffortlessClientStructureBuilder extends StructureBuilder {
                 }
                 var locations = resultMap.get(allColor).stream().map(BlockOperationResult::getOperation).map(BlockOperation::getBlockPosition).filter(Objects::nonNull).toList();
                 getEntrance().getClientManager().getOutlineRenderer().showCluster(generateId(uuid, allColor), locations)
-                        .texture(OutlineRenderLayers.CHECKERED_THIN_TEXTURE_LOCATION)
                         .lightMap(LightTexture.FULL_BLOCK)
                         .disableNormals()
                         .colored(allColor)

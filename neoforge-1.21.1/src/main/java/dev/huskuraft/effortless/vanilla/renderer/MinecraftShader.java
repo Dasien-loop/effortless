@@ -19,6 +19,7 @@ public record MinecraftShader(
     }
 
     public Uniform getUniform(String param) {
-        return new MinecraftUniform(refs.getUniform(param));
+        var uniform = refs.getUniform(param);
+        return uniform == null ? null : new MinecraftUniform(uniform);
     }
 }

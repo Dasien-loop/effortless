@@ -1,8 +1,11 @@
 package dev.huskuraft.effortless.vanilla.tag;
 
 import dev.huskuraft.universal.api.tag.Tag;
+import net.minecraft.nbt.ByteArrayTag;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.IntArrayTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.LongArrayTag;
 import net.minecraft.nbt.NumericTag;
 import net.minecraft.nbt.StringTag;
 
@@ -14,6 +17,9 @@ public record MinecraftTag(net.minecraft.nbt.Tag refs) implements Tag {
         if (refs instanceof StringTag stringTag) return new MinecraftStringTag(stringTag);
         if (refs instanceof CompoundTag compoundTag) return new MinecraftRecordTag(compoundTag);
         if (refs instanceof ListTag listTag) return new MinecraftListTag(listTag);
+        if (refs instanceof ByteArrayTag byteArrayTag) return new MinecraftByteArrayTag(byteArrayTag);
+        if (refs instanceof IntArrayTag intArrayTag) return new MinecraftIntArrayTag(intArrayTag);
+        if (refs instanceof LongArrayTag longArrayTag) return new MinecraftLongArrayTag(longArrayTag);
         return new MinecraftTag(refs);
     }
 

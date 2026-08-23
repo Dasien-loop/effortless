@@ -3,7 +3,15 @@
 
 [中文更新日志](CHANGELOG_zh-CN.md)
 
-### 3.4.0 - Dasien maintenance port - 2026-08-17
+### 3.4.1 - Dasien maintenance port
+
+* Keep copied block facing on paste and undo so controllers and other directional blocks no longer turn toward the player.
+* Sanitize copied block-entity NBT: strip inventories and formed-multiblock identity, and fall back to a tagless snapshot if a tile throws while serializing.
+* Fix Oculus/Iris preview ghosts, misplaced previews, and the Alt radial-menu crash during the shadow pass.
+
+----------
+
+### 3.4.0 - Dasien maintenance port
 
 * Port the maintained build to Forge 1.20.1, NeoForge 1.21.1, and NeoForge 26.1.2 using standard Gradle tooling.
 * Add optional material integrations for AE2, Beyond Dimensions, Refined Storage, Sophisticated Backpacks, and ProjectE where supported.

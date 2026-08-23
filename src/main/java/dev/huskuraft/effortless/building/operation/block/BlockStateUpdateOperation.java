@@ -8,8 +8,11 @@ import dev.huskuraft.universal.api.core.InteractionHand;
 import dev.huskuraft.universal.api.core.ItemStack;
 import dev.huskuraft.universal.api.core.StatTypes;
 import dev.huskuraft.universal.api.tag.RecordTag;
+import dev.huskuraft.effortless.Effortless;
+import dev.huskuraft.effortless.building.BuildState;
 import dev.huskuraft.effortless.building.Context;
 import dev.huskuraft.effortless.building.Storage;
+import dev.huskuraft.effortless.building.clipboard.BlockEntityTagSanitizer;
 import dev.huskuraft.effortless.building.operation.Operation;
 import dev.huskuraft.effortless.building.operation.empty.EmptyOperation;
 import dev.huskuraft.effortless.building.pattern.MirrorContext;
@@ -265,11 +268,16 @@ public class BlockStateUpdateOperation extends BlockOperation {
                 itemStack.setCount(1);
                 getPlayer().setItemStack(getHand(), itemStack);
                 var placed = false;
-                if (context.useLegacyBlockPlace()) {
+                // Copied states already include facing. BlockItem.place() would
+                // reorient directional blocks toward the player instead.
+                var keepCopiedState = restoring || context.buildState() == BuildState.PASTE_STRUCTURE;
+                if (context.useLegacyBlockPlace() && !keepCopiedState) {
                     placed = blockItem.placeOnBlock(getPlayer(), getInteraction()).consumesAction();
                 } else {
                     try {
-                        placed = blockItem.placeOnBlock(getPlayer(), getInteraction()).consumesAction();
+                        if (!keepCopiedState) {
+                            placed = blockItem.placeOnBlock(getPlayer(), getInteraction()).consumesAction();
+                        }
                     } catch (RuntimeException ignored) {
                         // Synthetic interactions are not accepted by every BlockItem.
                     }
@@ -281,6 +289,9 @@ public class BlockStateUpdateOperation extends BlockOperation {
                         }
                     }
                 }
+                if (placed && keepCopiedState) {
+                    getWorld().setBlockAndUpdate(getBlockPosition(), getBlockState());
+                }
                 getPlayer().setItemStack(getHand(), originalItemStack);
                 if (!placed) {
                     return BlockOperationResultType.FAIL_UNKNOWN;
@@ -291,8 +302,16 @@ public class BlockStateUpdateOperation extends BlockOperation {
                 if (context.fillContainers()) {
                     if (getEntityTag() != null && getBlockEntityInWorld() != null) {
                         if (getPlayer().getGameMode().isCreative()) {
-                            getBlockEntityInWorld().setTag(getEntityTag());
-                            return BlockOperationResultType.SUCCESS;
+                            var entityTag = restoring
+                                    ? getEntityTag()
+                                    : BlockEntityTagSanitizer.sanitize(getEntityTag());
+                            try {
+                                getBlockEntityInWorld().setTag(entityTag);
+                                return BlockOperationResultType.SUCCESS;
+                            } catch (RuntimeException exception) {
+                                Effortless.LOGGER.warn("Failed to apply block entity tag at {}", getBlockPosition(), exception);
+                                return BlockOperationResultType.SUCCESS_PARTIAL;
+                            }
                         } else {
                             return BlockOperationResultType.SUCCESS_PARTIAL;
                         }

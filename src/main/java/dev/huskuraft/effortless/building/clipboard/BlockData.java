@@ -17,6 +17,10 @@ public record BlockData(
         RecordTag entityTag
 ) implements Rotatable<BlockData>, Movable<BlockData>, Mirrorable<BlockData> {
 
+    public BlockData {
+        entityTag = BlockEntityTagSanitizer.sanitize(entityTag);
+    }
+
     @Override
     public BlockData rotate(RotateContext rotateContext) {
         return new BlockData(

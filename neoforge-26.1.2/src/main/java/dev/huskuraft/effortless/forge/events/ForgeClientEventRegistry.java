@@ -48,7 +48,7 @@ public class ForgeClientEventRegistry extends ClientEventRegistry {
     public void onReloadShader(RegisterRenderPipelinesEvent event) {
         getRegisterShaderEvent().invoker().onRegisterShader((resource, format, consumer) -> {
             var location = resource.<net.minecraft.resources.Identifier>reference();
-            var pipeline = RenderPipelines.SOLID_BLOCK.toBuilder()
+            var pipeline = RenderPipelines.ENTITY_TRANSLUCENT.toBuilder()
                     .withLocation(location)
                     .withVertexFormat(format.reference(), com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS)
                     .build();

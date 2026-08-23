@@ -250,13 +250,21 @@ public class MinecraftRenderer extends Renderer {
     public void renderBlockState(RenderLayer renderLayer, World world, BlockPosition blockPosition, BlockState blockState) {
         var minecraftBlockState = (net.minecraft.world.level.block.state.BlockState) blockState.reference();
         if (submitNodeCollector == null) return;
-        var state = new net.minecraft.client.renderer.block.BlockModelRenderState();
-        minecraftClient.getBlockModelResolver().update(
-                state,
-                minecraftBlockState,
-                net.minecraft.client.renderer.block.model.BlockDisplayContext.create()
+        var model = minecraftClient.getModelManager().getBlockStateModelSet().get(minecraftBlockState);
+        var parts = new java.util.ArrayList<net.minecraft.client.renderer.block.dispatch.BlockStateModelPart>();
+        model.collectParts(RAND, parts);
+        if (parts.isEmpty()) {
+            return;
+        }
+        submitNodeCollector.submitBlockModel(
+                minecraftMatrixStack,
+                MinecraftRenderStateFactory.renderType(renderLayer.reference()),
+                parts,
+                new int[0],
+                0x00F000F0,
+                OverlayTexture.NO_OVERLAY,
+                0
         );
-        state.submit(minecraftMatrixStack, submitNodeCollector, 0x00F000F0, OverlayTexture.NO_OVERLAY, 0);
     }
 
     @Override

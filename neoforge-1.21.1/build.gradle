@@ -1,0 +1,109 @@
+plugins {
+    id 'java-library'
+    id 'eclipse'
+    id 'idea'
+    id 'net.neoforged.moddev' version '2.0.141'
+}
+
+group = rootProject.findProperty('mod_group_id') + '.neoforge'
+version = rootProject.findProperty('mod_version')
+
+base {
+    archivesName = "${rootProject.findProperty('mod_id')}-neoforge-1.21.1"
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    withSourcesJar()
+}
+
+neoForge {
+    version = '21.1.230'
+
+    runs {
+        client {
+            client()
+        }
+        server {
+            server()
+            programArgument '--nogui'
+        }
+        configureEach {
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+    }
+
+    mods {
+        "${rootProject.findProperty('mod_id')}" {
+            sourceSet sourceSets.main
+            sourceSet project(':').sourceSets.main
+            sourceSet project(':local-api').sourceSets.main
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
+}
+
+configurations {
+    embeddedJson
+}
+
+dependencies {
+    implementation project(':')
+    implementation project(':local-api')
+    implementation 'com.electronwill.night-config:core:3.6.7'
+    implementation 'com.electronwill.night-config:toml:3.6.7'
+    implementation 'com.electronwill.night-config:json:3.6.7'
+    embeddedJson 'com.electronwill.night-config:json:3.8.3'
+    annotationProcessor 'com.google.auto.service:auto-service:1.1.1'
+    compileOnly 'com.google.auto.service:auto-service:1.1.1'
+    compileOnly 'maven.modrinth:ae2:19.2.17'
+    compileOnly 'maven.modrinth:beyonddimensions:0.7.26-1.21.1-neoforge'
+    compileOnly files('run/mods/curios-neoforge-9.5.1+1.21.1.jar')
+}
+
+sourceSets.main.resources {
+    srcDir("${rootProject.projectDir}/src/main/resources")
+    exclude 'META-INF/mods.toml'
+    exclude 'resources/**'
+}
+
+tasks.named('processResources', ProcessResources).configure {
+    def replaceProperties = [
+            mod_id                 : rootProject.findProperty('mod_id'),
+            mod_name               : rootProject.findProperty('mod_name'),
+            mod_license            : rootProject.findProperty('mod_license'),
+            mod_version            : rootProject.findProperty('mod_version'),
+            mod_authors            : rootProject.findProperty('mod_authors'),
+            mod_description        : rootProject.findProperty('mod_description'),
+            minecraft_version_range: '[1.21.1,1.22)',
+            neo_version_range      : '[21.1,22)',
+            loader_version_range   : '[4,)'
+    ]
+    inputs.properties replaceProperties
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand replaceProperties
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.named('jar', Jar).configure {
+    from project(':').sourceSets.main.output
+    from project(':local-api').sourceSets.main.output
+    from({
+        configurations.embeddedJson.collect { zipTree(it) }
+    }) {
+        include 'com/electronwill/nightconfig/json/**'
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}

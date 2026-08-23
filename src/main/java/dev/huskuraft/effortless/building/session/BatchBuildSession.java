@@ -13,10 +13,12 @@ import dev.huskuraft.universal.api.core.Player;
 import dev.huskuraft.universal.api.core.World;
 import dev.huskuraft.universal.api.platform.Entrance;
 import dev.huskuraft.universal.api.tag.RecordTag;
+import dev.huskuraft.effortless.Effortless;
 import dev.huskuraft.effortless.building.BuildState;
 import dev.huskuraft.effortless.building.BuildType;
 import dev.huskuraft.effortless.building.Context;
 import dev.huskuraft.effortless.building.Storage;
+import dev.huskuraft.effortless.building.clipboard.BlockData;
 import dev.huskuraft.effortless.building.clipboard.Snapshot;
 import dev.huskuraft.effortless.building.interceptor.BuildInterceptor;
 import dev.huskuraft.effortless.building.interceptor.FtbChunksInterceptor;
@@ -149,8 +151,34 @@ public class BatchBuildSession implements Session {
         if (!context.clipboard().enabled()) {
             return;
         }
-        var snapshot = new Snapshot("", System.currentTimeMillis(), lastResult.getResults().stream().map(BlockStateCopyOperationResult.class::cast).map(BlockStateCopyOperationResult::getBlockData).filter(blockData -> context.clipboard().copyAir() || (blockData.blockState() != null && !blockData.blockState().isAir())).toList());
-        getEntrance().getChannel().sendPacket(new PlayerSnapshotCapturePacket(player.getId(), snapshot), player);
+        try {
+            var snapshot = new Snapshot("", System.currentTimeMillis(), lastResult.getResults().stream()
+                    .filter(BlockStateCopyOperationResult.class::isInstance)
+                    .map(BlockStateCopyOperationResult.class::cast)
+                    .map(BlockStateCopyOperationResult::getBlockData)
+                    .filter(blockData -> context.clipboard().copyAir() || (blockData.blockState() != null && !blockData.blockState().isAir()))
+                    .toList());
+            getEntrance().getChannel().sendPacket(new PlayerSnapshotCapturePacket(player.getId(), snapshot), player);
+        } catch (Exception exception) {
+            Effortless.LOGGER.warn("Failed to capture clipboard snapshot, retrying without block-entity tags", exception);
+            try {
+                var stripped = lastResult.getResults().stream()
+                        .filter(BlockStateCopyOperationResult.class::isInstance)
+                        .map(BlockStateCopyOperationResult.class::cast)
+                        .map(result -> {
+                            var state = result.getOperation().getBlockState();
+                            if (state != null && state.isAir()) {
+                                return new BlockData(result.getRelativePosition(), null, null);
+                            }
+                            return new BlockData(result.getRelativePosition(), state, null);
+                        })
+                        .filter(blockData -> context.clipboard().copyAir() || (blockData.blockState() != null && !blockData.blockState().isAir()))
+                        .toList();
+                getEntrance().getChannel().sendPacket(new PlayerSnapshotCapturePacket(player.getId(), new Snapshot("", System.currentTimeMillis(), stripped)), player);
+            } catch (Exception fallbackException) {
+                Effortless.LOGGER.error("Failed to capture clipboard snapshot even without block-entity tags", fallbackException);
+            }
+        }
     }
 
 }

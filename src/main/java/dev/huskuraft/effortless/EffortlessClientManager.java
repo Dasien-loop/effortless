@@ -1,5 +1,6 @@
 package dev.huskuraft.effortless;
 
+import java.lang.reflect.Method;
 import java.util.Stack;
 
 import dev.huskuraft.universal.api.core.Direction;
@@ -48,6 +49,8 @@ public final class EffortlessClientManager implements ClientManager {
     private Client client;
 
     private int interactionCooldown = 0;
+
+    private static final Method SHADOW_PASS = findShadowPassMethod();
 
     public EffortlessClientManager(EffortlessClient entrance) {
         this.entrance = entrance;
@@ -376,9 +379,33 @@ public final class EffortlessClientManager implements ClientManager {
     }
 
     public void onRenderEnd(Renderer renderer, float deltaTick) {
+        if (isShadowPass()) {
+            return;
+        }
         patternRenderer.render(renderer, deltaTick);
         outlineRenderer.render(renderer, deltaTick);
         operationsRenderer.render(renderer, deltaTick);
+        renderer.bufferSource().end();
+    }
+
+    private static Method findShadowPassMethod() {
+        try {
+            return Class.forName("net.irisshaders.iris.shadows.ShadowRenderingState")
+                    .getDeclaredMethod("areShadowsCurrentlyBeingRendered");
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            return null;
+        }
+    }
+
+    private static boolean isShadowPass() {
+        if (SHADOW_PASS == null) {
+            return false;
+        }
+        try {
+            return Boolean.TRUE.equals(SHADOW_PASS.invoke(null));
+        } catch (ReflectiveOperationException ignored) {
+            return false;
+        }
     }
 
     public void onRegisterShader(RegisterShader.ShadersSink sink) {

@@ -168,14 +168,18 @@ public final class EffortlessStructureBuilder extends StructureBuilder {
 
         if (context.isBuildType()) {
             Effortless.LOGGER.debug("Received BUILD request from %s".formatted(player.getProfile().getName()));
-            var result = new BatchBuildSession(getEntrance(), player, context).commit();
-            logOperationFailures("build", player, result);
-            // Do not let failed interactions hide the last real build behind
-            // a zero-effect history entry.  They have no inverse operation.
-            if (result.getAffectedBlockCount() > 0) {
-                getOperationResultStack(player).push(result);
+            try {
+                var result = new BatchBuildSession(getEntrance(), player, context).commit();
+                logOperationFailures("build", player, result);
+                // Do not let failed interactions hide the last real build behind
+                // a zero-effect history entry.  They have no inverse operation.
+                if (result.getAffectedBlockCount() > 0) {
+                    getOperationResultStack(player).push(result);
+                }
+                getEntrance().getChannel().sendPacket(PlayerBuildTooltipPacket.build(result), player);
+            } catch (Exception exception) {
+                Effortless.LOGGER.error("Build commit failed for %s".formatted(player.getProfile().getName()), exception);
             }
-            getEntrance().getChannel().sendPacket(PlayerBuildTooltipPacket.build(result), player);
             return;
         }
 

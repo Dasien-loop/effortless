@@ -5,9 +5,9 @@ import java.util.Map;
 
 import dev.huskuraft.universal.api.renderer.RenderLayer;
 import dev.huskuraft.universal.api.renderer.RenderLayers;
+import dev.huskuraft.universal.api.renderer.Shaders;
 import dev.huskuraft.universal.api.renderer.VertexFormats;
 import dev.huskuraft.universal.api.renderer.programs.RenderState;
-import dev.huskuraft.effortless.renderer.BlockShaders;
 
 public abstract class BlockRenderLayers extends RenderLayers {
 
@@ -25,7 +25,6 @@ public abstract class BlockRenderLayers extends RenderLayers {
                     .setCullState(RenderLayers.NO_CULL)
                     .create(false));
     protected static final Map<String, RenderLayer> BLOCK_RENDER_TYPES = new HashMap<>();
-    protected static final RenderState.ShaderState TINTED_SOLID_SHADER = RenderState.ShaderState.create("tinted_solid_shader", BlockShaders.TINTED_OUTLINE);
     protected static final RenderLayer EF_LINES = RenderLayer.createComposite("ef_lines",
             VertexFormats.POSITION_COLOR_NORMAL,
             VertexFormats.Modes.DEBUG_LINES,
@@ -35,7 +34,6 @@ public abstract class BlockRenderLayers extends RenderLayers {
                     .setShaderState(RenderLayers.LINES_SHADER_STATE)
                     .setLayeringState(RenderLayers.VIEW_OFFSET_Z_LAYERING)
                     .setTransparencyState(RenderLayers.TRANSLUCENT_TRANSPARENCY)
-                    .setOutputState(RenderLayers.ITEM_ENTITY_TARGET)
                     .setWriteMaskState(RenderLayers.COLOR_DEPTH_WRITE)
                     .setCullState(RenderLayers.NO_CULL)
                     .create(false));
@@ -51,14 +49,18 @@ public abstract class BlockRenderLayers extends RenderLayers {
     public static RenderLayer block(int color) {
         return BLOCK_RENDER_TYPES.computeIfAbsent(Integer.toString(color), k -> {
             var texture = RenderState.TexturingState.create("block_texturing_" + k, () -> {
-                var colorUniform = BlockShaders.TINTED_OUTLINE.getUniform("TintColor");
-                if (colorUniform != null) {
-                    colorUniform.set((color >> 16 & 255) / 255f, (color >> 8 & 255) / 255f, (color & 255) / 255f, (color >>> 24) / 255f);
+                var modulator = Shaders.TRANSLUCENT_MOVING_BLOCK.getUniform("ColorModulator");
+                if (modulator != null) {
+                    modulator.set((color >> 16 & 255) / 255f, (color >> 8 & 255) / 255f, (color & 255) / 255f, (color >>> 24) / 255f);
                 }
             }, () -> {
+                var modulator = Shaders.TRANSLUCENT_MOVING_BLOCK.getUniform("ColorModulator");
+                if (modulator != null) {
+                    modulator.set(1f, 1f, 1f, 1f);
+                }
             });
             var renderState = RenderState.builder()
-                    .setShaderState(TINTED_SOLID_SHADER)
+                    .setShaderState(RenderLayers.TRANSLUCENT_MOVING_BLOCK_SHADER_STATE)
                     .setTexturingState(texture)
                     .setTransparencyState(RenderLayers.TRANSLUCENT_TRANSPARENCY)
                     .setTextureState(RenderLayers.BLOCK_SHEET_MIPPED_TEXTURE)
