@@ -98,7 +98,8 @@ public final class EffortlessClientStructureBuilder extends StructureBuilder {
             ResourceLocation dimensionId,
             dev.huskuraft.effortless.building.operation.block.Extras operationExtras,
             Object gameMode,
-            int inventorySignature
+            int inventorySignature,
+            boolean withinRenderLimit
     ) {
     }
 
@@ -519,6 +520,9 @@ public final class EffortlessClientStructureBuilder extends StructureBuilder {
     public void onTooltipReceived(Player player, OperationTooltip operationTooltip) {
         switch (operationTooltip.type()) {
             case PREVIEW -> {
+                if (lastPreviewContext == null || !lastPreviewContext.id().equals(operationTooltip.context().id())) {
+                    return;
+                }
                 serverPreviewTooltip = operationTooltip;
                 serverPreviewContextId = operationTooltip.context().id();
                 var serverHasAllRequiredItems = operationTooltip.itemSummary()
@@ -528,7 +532,7 @@ public final class EffortlessClientStructureBuilder extends StructureBuilder {
                 serverPreviewHasAllRequiredItems = serverHasAllRequiredItems;
                 if (availabilityChanged && lastPreviewContext != null
                         && lastPreviewContext.id().equals(serverPreviewContextId)
-                        && lastPreviewResult != null) {
+                        && lastPreviewResult != null && isWithinRenderLimit(lastPreviewContext)) {
                     showContext(player.getId(), 0, player, lastPreviewContext, lastPreviewResult);
                 }
                 showTooltip(player.getId(), 0, player, operationTooltip);
@@ -630,7 +634,7 @@ public final class EffortlessClientStructureBuilder extends StructureBuilder {
         var previewKey = previewKey(context);
         var previewChanged = !previewKey.equals(lastPreviewKey);
 
-        if (context.getVolume() > getEntrance().getConfigStorage().get().renderConfig().maxRenderVolume()) {
+        if (!isWithinRenderLimit(context)) {
             if (previewChanged) {
                 lastPreviewKey = previewKey;
                 lastPreviewContext = context;
@@ -640,7 +644,6 @@ public final class EffortlessClientStructureBuilder extends StructureBuilder {
             } else {
                 keepPreviewContext(player.getId(), context);
             }
-            showTooltip(player.getId(), 0, player, OperationTooltip.build(context));
         } else {
             if (previewChanged) {
                 var result = new BatchBuildSession(getEntrance(), player, context).commit();
@@ -652,16 +655,16 @@ public final class EffortlessClientStructureBuilder extends StructureBuilder {
             } else {
                 keepPreviewContext(player.getId(), context);
             }
-
-            var hasServerPreview = serverPreviewTooltip != null && context.id().equals(serverPreviewContextId);
-            var serverHasAllRequiredItems = hasServerPreview
-                    && serverPreviewTooltip.itemSummary().getOrDefault(ItemSummary.BLOCKS_ITEMS_INSUFFICIENT, List.of()).isEmpty();
-            BlockOperationRenderer.setServerPreviewHasAllRequiredItems(serverHasAllRequiredItems);
-            var tooltip = hasServerPreview
-                    ? serverPreviewTooltip
-                    : lastPreviewResult.getTooltip();
-            showTooltip(player.getId(), 0, player, tooltip);
         }
+
+        // The render limit only suppresses local block previews, not the server's
+        // material summary. Both paths must keep the same authoritative tooltip.
+        var tooltip = OperationTooltip.preview(context, serverPreviewTooltip,
+                lastPreviewResult == null ? null : lastPreviewResult.getTooltip());
+        var hasServerPreview = serverPreviewTooltip != null && context.id().equals(serverPreviewContextId);
+        BlockOperationRenderer.setServerPreviewHasAllRequiredItems(hasServerPreview
+                && tooltip.itemSummary().getOrDefault(ItemSummary.BLOCKS_ITEMS_INSUFFICIENT, List.of()).isEmpty());
+        showTooltip(player.getId(), 0, player, tooltip);
 
         showBuildMessage(player, context);
 
@@ -689,13 +692,18 @@ public final class EffortlessClientStructureBuilder extends StructureBuilder {
             return;
         }
         ClientMaterialSnapshotCache.update(player, packet.contextId(), packet.items());
-        if (lastPreviewContext == null || !packet.contextId().equals(lastPreviewContext.id())) {
+        if (lastPreviewContext == null || !packet.contextId().equals(lastPreviewContext.id())
+                || !isWithinRenderLimit(lastPreviewContext)) {
             return;
         }
         var context = lastPreviewContext;
         var result = new BatchBuildSession(getEntrance(), player, context).commit();
         lastPreviewResult = result;
         showContext(player.getId(), 0, player, context, result);
+    }
+
+    private boolean isWithinRenderLimit(Context context) {
+        return getEntrance().getConfigStorage().get().renderConfig().canRenderVolume(context.getVolume());
     }
 
     private PreviewKey previewKey(Context context) {
@@ -712,7 +720,8 @@ public final class EffortlessClientStructureBuilder extends StructureBuilder {
                 extras == null ? null : extras.dimensionId(),
                 extras == null ? null : extras.extras(),
                 extras == null ? null : extras.gameMode(),
-                inventorySignature(extras == null ? null : extras.inventorySnapshot())
+                inventorySignature(extras == null ? null : extras.inventorySnapshot()),
+                isWithinRenderLimit(context)
         );
     }
 

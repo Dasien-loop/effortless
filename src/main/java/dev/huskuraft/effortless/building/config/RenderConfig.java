@@ -21,6 +21,10 @@ public record RenderConfig(
         );
     }
 
+    public boolean canRenderVolume(int volume) {
+        return volume <= maxRenderVolume;
+    }
+
     public boolean showOtherPlayersBuildTooltips() {
         return false;
     }

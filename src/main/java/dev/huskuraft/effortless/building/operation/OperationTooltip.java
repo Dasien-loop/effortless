@@ -21,6 +21,17 @@ public record OperationTooltip(
         return reduce(Type.BUILD, context, Map.of(itemSummary, itemStacks));
     }
 
+    /** Keep server material summaries even when local block rendering is skipped. */
+    public static OperationTooltip preview(Context context, OperationTooltip serverPreview, OperationTooltip localPreview) {
+        if (serverPreview != null && context.id().equals(serverPreview.context().id())) {
+            return serverPreview;
+        }
+        if (localPreview != null && context.id().equals(localPreview.context().id())) {
+            return localPreview;
+        }
+        return new OperationTooltip(Type.PREVIEW, context, Map.of());
+    }
+
     public static OperationTooltip build(Context context) {
         return new OperationTooltip(Type.BUILD, context, Map.of());
     }

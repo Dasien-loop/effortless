@@ -12,9 +12,9 @@ Install the matching jar on both the client and the server. Each Minecraft and l
 
 | Artifact | Loader | Minecraft | Java |
 |---|---|---|---|
-| `effortless-forge-1.20.1-3.4.0.jar` | Forge | 1.20.1 | 17 |
-| `effortless-neoforge-1.21.1-3.4.0.jar` | NeoForge | 1.21.1 | 21 |
-| `effortless-neoforge-26.1.2-3.4.0.jar` | NeoForge | 26.1.2 | 25 |
+| `effortless-forge-1.20.1-3.4.2.jar` | Forge | 1.20.1 | 17 |
+| `effortless-neoforge-1.21.1-3.4.2.jar` | NeoForge | 1.21.1 | 21 |
+| `effortless-neoforge-26.1.2-3.4.2.jar` | NeoForge | 26.1.2 | 25 |
 
 This port intentionally supports only the targets listed above. It uses standard ForgeGradle and NeoForge ModDevGradle modules and includes the required loader-neutral API source in this repository; it does not require the upstream multi-version Gradle plugin or artifact repository.
 

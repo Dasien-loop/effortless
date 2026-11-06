@@ -57,6 +57,8 @@ dependencies {
     implementation 'com.electronwill.night-config:core:3.6.7'
     implementation 'com.electronwill.night-config:toml:3.6.7'
     implementation 'com.electronwill.night-config:json:3.6.7'
+
+    testImplementation 'junit:junit:4.13.2'
 }
 
 tasks.register('printSupportedTargets') {

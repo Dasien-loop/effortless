@@ -12,9 +12,9 @@
 
 | 文件 | 加载器 | Minecraft | Java |
 |---|---|---|---|
-| `effortless-forge-1.20.1-3.4.0.jar` | Forge | 1.20.1 | 17 |
-| `effortless-neoforge-1.21.1-3.4.0.jar` | NeoForge | 1.21.1 | 21 |
-| `effortless-neoforge-26.1.2-3.4.0.jar` | NeoForge | 26.1.2 | 25 |
+| `effortless-forge-1.20.1-3.4.2.jar` | Forge | 1.20.1 | 17 |
+| `effortless-neoforge-1.21.1-3.4.2.jar` | NeoForge | 1.21.1 | 21 |
+| `effortless-neoforge-26.1.2-3.4.2.jar` | NeoForge | 26.1.2 | 25 |
 
 本维护版仅支持上表中的三个目标版本。项目已改用标准 ForgeGradle 与 NeoForge ModDevGradle 模块，并在仓库中包含所需的跨加载器 API 源码；构建不再依赖上游作者的多版本 Gradle 插件或制品仓库。
 

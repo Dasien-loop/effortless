@@ -3,6 +3,12 @@
 
 [中文更新日志](CHANGELOG_zh-CN.md)
 
+### 3.4.2 - Dasien maintenance port
+
+* Fix the material summary flickering between pending and server results when the selection exceeds Max Render Volume ([#1](https://github.com/Dasien-loop/effortless/issues/1)).
+
+----------
+
 ### 3.4.1 - Dasien maintenance port
 
 * Keep copied block facing on paste and undo so controllers and other directional blocks no longer turn toward the player.
