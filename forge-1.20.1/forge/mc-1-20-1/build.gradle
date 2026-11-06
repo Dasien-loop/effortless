@@ -16,14 +16,11 @@ java {
 }
 
 repositories {
-    maven { url = 'https://maven.theillusivec4.top/' }
-    mavenCentral()
-    // CurseForge Maven artifacts are processed by ForgeGradle's fg.deobf,
-    // which is required for third-party Forge jars in a userdev run.
     maven {
-        url = 'https://www.cursemaven.com'
-        content { includeGroup 'curse.maven' }
+        url = 'https://maven.theillusivec4.top/'
+        content { includeGroup 'top.theillusivec4.curios' }
     }
+    mavenCentral()
     maven {
         url = 'https://api.modrinth.com/maven'
         content { includeGroup 'maven.modrinth' }
@@ -73,9 +70,6 @@ dependencies {
     compileOnly 'com.google.auto.service:auto-service:1.1.1'
     compileOnly fg.deobf('maven.modrinth:ae2:15.4.10')
     compileOnly fg.deobf('maven.modrinth:beyonddimensions:0.7.27-1.20.1-forge')
-    compileOnly fg.deobf('curse.maven:jade-324717:8479276')
-    compileOnly fg.deobf('curse.maven:jade-addons-583345:8203724')
-    compileOnly fg.deobf('curse.maven:jei-238222:8570086')
     compileOnly fg.deobf('top.theillusivec4.curios:curios-forge:5.14.1+1.20.1')
 }
 

@@ -9,6 +9,15 @@ java {
 }
 
 allprojects {
+    // Loader plugins add mirror repositories ahead of project repositories.
+    // Resolve NightConfig only from its canonical repository, including transitives.
+    repositories {
+        exclusiveContent {
+            forRepository { mavenCentral() }
+            filter { includeGroup 'com.electronwill.night-config' }
+        }
+    }
+
     apply plugin: 'idea'
     idea {
         module {

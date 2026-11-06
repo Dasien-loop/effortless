@@ -44,6 +44,10 @@ neoForge {
 }
 
 repositories {
+    maven {
+        url = 'https://maven.theillusivec4.top/'
+        content { includeGroup 'top.theillusivec4.curios' }
+    }
     mavenCentral()
     maven {
         url = 'https://api.modrinth.com/maven'
@@ -66,7 +70,7 @@ dependencies {
     compileOnly 'com.google.auto.service:auto-service:1.1.1'
     compileOnly 'maven.modrinth:ae2:19.2.17'
     compileOnly 'maven.modrinth:beyonddimensions:0.7.26-1.21.1-neoforge'
-    compileOnly files('run/mods/curios-neoforge-9.5.1+1.21.1.jar')
+    compileOnly 'top.theillusivec4.curios:curios-neoforge:9.5.1+1.21.1'
 }
 
 sourceSets.main.resources {
